@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Выбор даты и времени</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 320px;
+            box-sizing: border-box;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .date-input, .time-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+
+        .time-input {
+            width: 48%;
+        }
+
+        .time-group {
+            display: flex;
+            gap: 4%;
+        }
+
+        .date-input:focus, .time-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 4px rgba(102, 126, 234, 0.3);
+        }
+
+        .button {
+            width: 100%;
+            padding: 10px;
+            background: #667eea;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.3s;
+        }
+
+        .button:hover {
+            background: #5a6cd8;
+            transform: translateY(-1px);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            width: 85%;
+            max-width: 280px;
+            font-size: 14px;
+        }
+
+        .modal-buttons {
+            margin-top: 15px;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 6px 18px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        .confirm-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .cancel-btn {
+            background: #ddd;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="input-group">
+            <input type="date" id="datePicker" class="date-input">
+        </div>
+        <div class="input-group time-group">
+            <input type="number" id="hourPicker" class="time-input" min="0" max="23" placeholder="Часы">
+            <input type="number" id="minutePicker" class="time-input" min="0" max="59" placeholder="Минуты">
+        </div>
+        <button class="button" onclick="showConfirmation()">Выбрать</button>
+    </div>
+
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+            <p>Подтвердить выбор: <span id="selectedDateTime"></span>?</p>
+            <div class="modal-buttons">
+                <button class="modal-btn confirm-btn" onclick="confirmDate()">Да</button>
+                <button class="modal-btn cancel-btn" onclick="hideConfirmation()">Нет</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        let selectedDate = '';
+        let selectedHour = '';
+        let selectedMinute = '';
+
+        // Установка минимальной даты как текущей
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('datePicker').setAttribute('min', today);
+
+        function showConfirmation() {
+            selectedDate = document.getElementById('datePicker').value;
+            selectedHour = document.getElementById('hourPicker').value;
+            selectedMinute = document.getElementById('minutePicker').value;
+
+            if (!selectedDate) {
+                alert('Пожалуйста, выберите дату');
+                return;
+            }
+            if (selectedHour === '' || selectedMinute === '') {
+                alert('Пожалуйста, укажите время');
+                return;
+            }
+
+            // Создаем выбранную дату для проверки
+            const selectedDateTime = new Date(selectedDate);
+            selectedHour = parseInt(selectedHour);
+            selectedMinute = parseInt(selectedMinute);
+            selectedDateTime.setHours(selectedHour, selectedMinute, 0, 0);
+
+            // Проверка на прошедшее время
+            const now = new Date();
+            if (selectedDateTime <= now) {
+                alert('Нельзя выбрать прошедшее время. Выберите будущее время.');
+                return;
+            }
+
+            // Форматируем для отображения
+            const hourStr = selectedHour.toString().padStart(2, '0');
+            const minuteStr = selectedMinute.toString().padStart(2, '0');
+            document.getElementById('selectedDateTime').textContent = 
+                `${selectedDateTime.getDate()}.${selectedDateTime.getMonth() + 1}.${selectedDateTime.getFullYear()} ${hourStr}:${minuteStr}`;
+            document.getElementById('confirmationModal').style.display = 'flex';
+        }
+
+        function hideConfirmation() {
+            document.getElementById('confirmationModal').style.display = 'none';
+        }
+
+        function confirmDate() {
+            const date = new Date(selectedDate);
+            date.setHours(parseInt(selectedHour));
+            date.setMinutes(parseInt(selectedMinute));
+            date.setSeconds(0);
+            date.setMilliseconds(0);
+
+            const timestamp = date.getTime();
+            const timezoneOffset = new Date().getTimezoneOffset();
+            const dataToSend = `${timestamp}_${timezoneOffset}`;
+
+            window.Telegram.WebApp.sendData(dataToSend);
+            window.Telegram.WebApp.close();
+        }
+
+        // Ограничение ввода
+        document.getElementById('hourPicker').addEventListener('input', function() {
+            if (this.value > 23) this.value = 23;
+            if (this.value < 0) this.value = 0;
+        });
+
+        document.getElementById('minutePicker').addEventListener('input', function() {
+            if (this.value > 59) this.value = 59;
+            if (this.value < 0) this.value = 0;
+        });
+
+        window.Telegram.WebApp.BackButton.onClick(() => {
+            window.Telegram.WebApp.close();
+        });
+        window.Telegram.WebApp.BackButton.show();
+        window.Telegram.WebApp.expand();
+    </script>
+</body>
+</html>
